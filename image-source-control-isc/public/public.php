@@ -175,6 +175,11 @@ class ISC_Public extends ISC_Class {
 	 * @return string $content
 	 */
 	public function add_sources_to_content( $content ) {
+		// return if content is empty or null (the latter being an actual issue on a user’s site likely caused by a third-party plugin using the the_content filter wrongly)
+		if ( empty( $content ) ) {
+			ISC_Log::log( 'skipped adding sources because the content was empty' );
+			return $content;
+		}
 
 		// return if this is not the main query or within the loop
 		if ( ! self::is_main_loop() ) {
@@ -187,9 +192,7 @@ class ISC_Public extends ISC_Class {
 		}
 
 		// maybe add source captions
-		$options = $this->get_isc_options();
-		if ( ! empty( $options['display_type'] ) && is_array( $options['display_type'] ) && in_array( 'overlay', $options['display_type'], true )
-			&& apply_filters( 'isc_public_add_source_captions_to_content', true ) ) {
+		if ( self::captions_enabled() && apply_filters( 'isc_public_add_source_captions_to_content', true ) ) {
 			$content = self::add_source_captions_to_content( $content );
 		} else {
 			ISC_Log::log( 'not creating image overlays because the option is disabled for post content' );
@@ -321,6 +324,16 @@ class ISC_Public extends ISC_Class {
 		 * Attach follow content back
 		 */
 		return $content . $content_after;
+	}
+
+	/**
+	 * Return true if captions are enabled
+	 *
+	 * @return bool
+	 */
+	public static function captions_enabled(): bool {
+		$options = self::get_instance()->get_isc_options();
+		return ! empty( $options['display_type'] ) && is_array( $options['display_type'] ) && in_array( 'overlay', $options['display_type'], true );
 	}
 
 	/**
@@ -642,10 +655,8 @@ class ISC_Public extends ISC_Class {
 					// only list published posts
 					if ( get_post_status( $data ) === 'publish' ) {
 						$usage_data_array[] = sprintf(
-								// translators: %1$s is a URL, %2$s is the title of an image, %3$s is the link text.
-							__( '<li><a href="%1$s" title="View %2$s">%3$s</a></li>', 'image-source-control-isc' ),
+							'<li><a href="%1$s">%2$s</a></li>',
 							esc_url( get_permalink( $data ) ),
-							esc_attr( get_the_title( $data ) ),
 							esc_html( get_the_title( $data ) )
 						);
 					}
