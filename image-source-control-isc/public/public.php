@@ -7,7 +7,7 @@ use ISC\Standard_Source;
  *
  * @todo move frontend-only functions from general class here
  */
-class ISC_Public extends ISC_Class {
+class ISC_Public extends \ISC\Image_Sources\Image_Sources {
 
 	/**
 	 * Instance of ISC_Public
@@ -32,14 +32,14 @@ class ISC_Public extends ISC_Class {
 		// register the shortcode for the global list. Since this shortcode has to be placed manually and is normally only used once, checking if ISC is disabled on cetain pages doesn’t make sense
 		add_shortcode( 'isc_list_all', [ $this, 'list_all_post_attachments_sources_shortcode' ] );
 
-		if ( ! self::can_load_isc() ) {
+		if ( ! self::can_load_image_sources() ) {
 			return;
 		}
 
 		// prepare the log
 		$this->prepare_log();
 
-		if ( ISC\Renderer\Caption::has_caption_style() ) {
+		if ( ISC\Image_Sources\Renderer\Caption::has_caption_style() ) {
 			add_action( 'wp_enqueue_scripts', [ $this, 'front_scripts' ] );
 			add_action( 'wp_head', [ $this, 'front_head' ] );
 		}
@@ -57,7 +57,7 @@ class ISC_Public extends ISC_Class {
 	 *
 	 * @return bool
 	 */
-	public static function can_load_isc() {
+	public static function can_load_image_sources() {
 
 		$post_id = get_the_ID();
 
@@ -72,7 +72,7 @@ class ISC_Public extends ISC_Class {
 			return false;
 		}
 
-		return apply_filters( 'isc_can_load', '__return_true' );
+		return apply_filters( 'isc_can_load', ISC\Plugin::is_module_enabled( 'image_sources' ) );
 	}
 
 	/**
@@ -139,7 +139,7 @@ class ISC_Public extends ISC_Class {
 			return;
 		}
 
-		$options = $this->get_isc_options();
+		$options = $this->get_options();
 		?>
 			<script>
 			/* <![CDATA[ */
@@ -219,7 +219,7 @@ class ISC_Public extends ISC_Class {
 	 *
 	 * @return bool true if we are currently on something that could be called the "main loop"
 	 */
-	private static function is_main_loop() {
+	public static function is_main_loop() {
 
 		// Exception: Oxygen builder, where `is_the_loop()` is false
 		if ( defined( 'CT_VERSION' ) && defined( 'CT_FW_PATH' ) ) {
@@ -286,7 +286,7 @@ class ISC_Public extends ISC_Class {
 				ISC_Log::log( sprintf( 'ID for source "%s": "%s"', $_match['img_src'], $id ) );
 			}
 
-			$source = ISC\Renderer\Caption::get( $id );
+			$source = ISC\Image_Sources\Renderer\Caption::get( $id );
 
 			if ( ! $source ) {
 				ISC_Log::log( sprintf( 'skipped empty sources string for ID "%s"', $id ) );
@@ -301,7 +301,7 @@ class ISC_Public extends ISC_Class {
 			$markup_after  = '';
 
 			// default style
-			if ( ISC\Renderer\Caption::has_caption_style() ) {
+			if ( ISC\Image_Sources\Renderer\Caption::has_caption_style() ) {
 				$markup_before = '<span id="isc_attachment_' . $id . '" class="isc-source ' . $alignment . '">';
 				$markup_after  = '</span>';
 			}
@@ -332,7 +332,7 @@ class ISC_Public extends ISC_Class {
 	 * @return bool
 	 */
 	public static function captions_enabled(): bool {
-		$options = self::get_instance()->get_isc_options();
+		$options = self::get_instance()->get_options();
 		return ! empty( $options['display_type'] ) && is_array( $options['display_type'] ) && in_array( 'overlay', $options['display_type'], true );
 	}
 
@@ -368,7 +368,7 @@ class ISC_Public extends ISC_Class {
 	public function excerpt_filter( $excerpt ) {
 
 		// display inline sources
-		$options = $this->get_isc_options();
+		$options = $this->get_options();
 		$post    = get_post();
 
 		if ( empty( $options['list_on_excerpts'] ) ) {
@@ -391,7 +391,7 @@ class ISC_Public extends ISC_Class {
 			return $block_content;
 		}
 
-		$options = $this->get_isc_options();
+		$options = $this->get_options();
 		if ( empty( $options['list_on_excerpts'] ) ) {
 			return $block_content;
 		}
@@ -460,7 +460,7 @@ class ISC_Public extends ISC_Class {
 			$atts = [];
 			foreach ( $attachments as $attachment_id => $attachment_array ) {
 				$image_uses_standard_source = Standard_Source::use_standard_source( $attachment_id );
-				$source                     = self::get_image_source_text( $attachment_id );
+				$source                     = self::get_image_source_text_raw( $attachment_id );
 
 				// check if source of own images can be displayed
 				if ( ( ! $image_uses_standard_source && $source === '' ) || ( $image_uses_standard_source && $exclude_standard ) ) {
@@ -473,7 +473,7 @@ class ISC_Public extends ISC_Class {
 				} else {
 					$atts[ $attachment_id ]['title'] = get_the_title( $attachment_id );
 					ISC_Log::log( sprintf( 'image %d: getting title "%s"', $attachment_id, $atts[ $attachment_id ]['title'] ) );
-					$atts[ $attachment_id ]['source'] = $this->render_image_source_string( $attachment_id );
+					$atts[ $attachment_id ]['source'] = ISC\Image_Sources\Renderer\Image_Source_String::get( $attachment_id );
 					if ( ! $atts[ $attachment_id ]['source'] ) {
 						ISC_Log::log( sprintf( 'image %d: skipped because of empty standard source', $attachment_id ) );
 						unset( $atts[ $attachment_id ] );
@@ -507,7 +507,7 @@ class ISC_Public extends ISC_Class {
 			return '';
 		}
 
-		$options  = $this->get_isc_options();
+		$options  = $this->get_options();
 		$headline = $options['image_list_headline'];
 
 		ob_start();
@@ -574,7 +574,7 @@ class ISC_Public extends ISC_Class {
 	 * @return string
 	 */
 	public function list_all_post_attachments_sources_shortcode( $atts = [] ) {
-		$options = $this->get_isc_options();
+		$options = $this->get_options();
 
 		$a = shortcode_atts(
 			[
@@ -628,7 +628,7 @@ class ISC_Public extends ISC_Class {
 		$connected_atts = [];
 
 		foreach ( $attachments as $_attachment ) {
-			$connected_atts[ $_attachment->ID ]['source']   = self::get_image_source_text( $_attachment->ID );
+			$connected_atts[ $_attachment->ID ]['source']   = self::get_image_source_text_raw( $_attachment->ID );
 			$connected_atts[ $_attachment->ID ]['standard'] = Standard_Source::use_standard_source( $_attachment->ID );
 			// jump to next element if the standard source is set to be excluded from the source list
 			if ( Standard_Source::standard_source_is( 'exclude' ) && $connected_atts[ $_attachment->ID ]['standard'] ) {
@@ -717,7 +717,7 @@ class ISC_Public extends ISC_Class {
 		if ( ! is_array( $atts ) || $atts === [] ) {
 			return;
 		}
-		$options = $this->get_isc_options();
+		$options = $this->get_options();
 
 		$global_list_path = apply_filters( 'isc_public_global_list_view_path', ISCPATH . 'public/views/global-list.php' );
 		if ( $global_list_path && file_exists( $global_list_path ) ) {
@@ -734,7 +734,7 @@ class ISC_Public extends ISC_Class {
 	 * @param int $attachment_id attachment ID.
 	 */
 	public function render_global_list_thumbnail( $attachment_id ) {
-		$options = $this->get_isc_options();
+		$options = $this->get_options();
 
 		if ( 'custom' !== $options['thumbnail_size'] ) {
 			$thumbnail = wp_get_attachment_image( $attachment_id, $options['thumbnail_size'] );
@@ -898,7 +898,7 @@ class ISC_Public extends ISC_Class {
 		}
 
 		$id            = get_post_thumbnail_id( $post_id );
-		$source_string = ISC\Renderer\Caption::get(
+		$source_string = ISC\Image_Sources\Renderer\Caption::get(
 			$id,
 			[],
 			[
@@ -925,7 +925,9 @@ class ISC_Public extends ISC_Class {
 		// get the id by the image source
 		$id = ISC_Model::get_image_by_url( $url );
 
-		return $this->render_image_source_string( $id );
+		_deprecated_function( __METHOD__, '1.9.0' );
+
+		return ISC\Image_Sources\Renderer\Image_Source_String::get( $id );
 	}
 
 	/**
@@ -951,6 +953,7 @@ class ISC_Public extends ISC_Class {
 	 *
 	 * @updated 1.5 wrapped source into source url
 	 * @updated 2.4 accept metadata as an argument
+	 * @deprecated since 3.0
 	 *
 	 * @param int|string $id   id of the image.
 	 * @param string[]   $data metadata.
@@ -960,63 +963,9 @@ class ISC_Public extends ISC_Class {
 	 * @return bool|string false if no source was given, else string with source
 	 */
 	public function render_image_source_string( $id, array $data = [], array $args = [] ) {
-		$id = (int) $id;
+		_deprecated_function( __METHOD__, '3.0.0', 'ISC\Image_Sources\Renderer\Image_Source_String::get' );
 
-		if ( ! $id ) {
-			return false;
-		}
-
-		$options             = $this->get_isc_options();
-		$metadata['source']  = $data['source'] ?? self::get_image_source_text( $id );
-		$metadata['own']     = $data['own'] ?? Standard_Source::use_standard_source( $id );
-		$metadata['licence'] = $data['licence'] ?? self::get_image_license( $id );
-
-		if ( ! isset( $args['disable-links'] ) ) {
-			$metadata['source_url'] = $data['source_url'] ?? self::get_image_source_url( $id );
-		} else {
-			$metadata['source_url'] = '';
-		}
-
-		$source = '';
-
-		if ( $metadata['own'] ) {
-			$source = Standard_Source::get_standard_source_text_for_attachment( $id );
-		} elseif ( '' !== $metadata['source'] ) {
-				$source = $metadata['source'];
-		}
-
-		if ( $source === '' ) {
-			return false;
-		}
-
-		// wrap link around source, if given
-		if ( '' !== $metadata['source_url'] ) {
-			$classes      = apply_filters( 'isc_public_source_url_html_classes', [], $id, $data, $args, $metadata );
-			$class_string = count( $classes ) > 0 ? ' class="' . esc_attr( implode( ' ', $classes ) ) . '"' : '';
-
-			$source = apply_filters(
-				'isc_public_source_url_html',
-				sprintf( '<a href="%2$s" target="_blank" rel="nofollow"%3$s>%1$s</a>', $source, esc_url_raw( $metadata['source_url'] ), $class_string ),
-				$id,
-				$metadata
-			);
-		}
-
-		// add license if enabled
-		if ( $options['enable_licences'] && isset( $metadata['licence'] ) && $metadata['licence'] ) {
-			$licences = $this->licences_text_to_array( $options['licences'] );
-			if ( ! isset( $args['disable-links'] ) && isset( $licences[ $metadata['licence'] ]['url'] ) ) {
-				$licence_url = $licences[ $metadata['licence'] ]['url'];
-			}
-
-			if ( isset( $licence_url ) && $licence_url !== '' ) {
-				$source = sprintf( '%1$s | <a href="%3$s" target="_blank" rel="nofollow">%2$s</a>', $source, $metadata['licence'], $licence_url );
-			} else {
-				$source = sprintf( '%1$s | %2$s', $source, $metadata['licence'] );
-			}
-		}
-
-		return $source;
+		return ISC\Image_Sources\Renderer\Image_Source_String::get( $id, $data, $args );
 	}
 
 	/**
@@ -1025,7 +974,7 @@ class ISC_Public extends ISC_Class {
 	 * @return bool true if the source list can be added to the content
 	 */
 	public function can_add_list_to_content() {
-		$options = $this->get_isc_options();
+		$options = $this->get_options();
 
 		/**
 		 * Tests:
@@ -1046,16 +995,15 @@ class ISC_Public extends ISC_Class {
 	/**
 	 * Get image source string for public output
 	 *
+	 * @depreacted since 3.0
+	 *
 	 * @param int $attachment_id attachment ID.
 	 * @return string
 	 */
 	public static function get_image_source_text( $attachment_id ) {
-		return apply_filters(
-			'isc_public_attachment_get_source',
-			trim(
-				get_post_meta( $attachment_id, 'isc_image_source', true )
-			)
-		);
+		_deprecated_function( __METHOD__, '3.0.0', 'ISC\Image_Sources\Image_Source::get_image_source_text' );
+
+		return ISC\Image_Sources\Image_Sources::get_image_source_text( $attachment_id );
 	}
 
 	/**
