@@ -2,7 +2,8 @@
 
 namespace ISC\Image_Sources;
 
-use ISC_Model;
+use ISC\Image_Sources\Post_Meta\Image_Posts_Meta;
+use ISC\Image_Sources\Post_Meta\Post_Images_Meta;
 
 /**
  * Handle AJAX calls
@@ -17,6 +18,7 @@ class Admin_Ajax {
 		add_action( 'wp_ajax_isc-post-image-relations', [ $this, 'list_post_image_relations' ] );
 		add_action( 'wp_ajax_isc-image-post-relations', [ $this, 'list_image_post_relations' ] );
 		add_action( 'wp_ajax_isc-clear-index', [ $this, 'clear_index' ] );
+		add_action( 'wp_ajax_isc-show-storage', [ $this, 'show_storage' ] );
 		add_action( 'wp_ajax_isc-clear-storage', [ $this, 'clear_storage' ] );
 		add_action( 'wp_ajax_isc-clear-image-posts-index', [ $this, 'clear_image_posts_index' ] );
 		add_action( 'wp_ajax_isc-clear-post-images-index', [ $this, 'clear_post_images_index' ] );
@@ -97,13 +99,31 @@ class Admin_Ajax {
 			die( 'Wrong capabilities' );
 		}
 
-		die(
-			sprintf(
-			// translators: %d is the number of deleted entries
-				esc_html__( '%d entries deleted', 'image-source-control-isc' ),
-				(int) ISC_Model::clear_index()
-			)
-		);
+		if ( \ISC\Indexer::clear_index() ) {
+			wp_send_json_success( esc_html__( 'Index cleared', 'image-source-control-isc' ) );
+		} else {
+			wp_send_json_error( 'Error' );
+		}
+	}
+
+	/**
+	 * Show the storage array for debugging
+	 */
+	public function show_storage() {
+		check_ajax_referer( 'isc-admin-ajax-nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			die( 'Wrong capabilities' );
+		}
+
+		$storage_model = new \ISC_Storage_Model();
+		$images        = $storage_model->get_storage();
+
+		// We are in debug mode, so it is fine to just output the content
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+		print_r( $images );
+
+		die();
 	}
 
 	/**
@@ -136,9 +156,13 @@ class Admin_Ajax {
 		}
 
 		$image_id = (int) $_POST['image_id'];
-		delete_post_meta( $image_id, 'isc_image_posts' );
+		$deleted  = Image_Posts_Meta::delete( $image_id );
 
-		die( 'Image-Posts index cleared' );
+		if ( $deleted ) {
+			wp_send_json_success( 'Image-Posts index cleared' );
+		} else {
+			wp_send_json_success( 'Image-Posts index cleared (or did not exist)' );
+		}
 	}
 
 	/**
@@ -156,8 +180,12 @@ class Admin_Ajax {
 		}
 
 		$post_id = (int) $_POST['post_id'];
-		delete_post_meta( $post_id, 'isc_post_images' );
+		$deleted = Post_Images_Meta::delete( $post_id );
 
-		die( 'Post-Images index cleared' );
+		if ( $deleted ) {
+			wp_send_json_success( 'Post-Images index cleared' );
+		} else {
+			wp_send_json_success( 'Post-Images index cleared (or did not exist)' );
+		}
 	}
 }

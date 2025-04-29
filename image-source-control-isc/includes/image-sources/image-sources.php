@@ -10,34 +10,6 @@ use ISC_Model;
  */
 class Image_Sources {
 	/**
-	 * Define default meta fields
-	 *
-	 * @var array option fields.
-	 */
-	protected $fields = [
-		'image_source'     => [
-			'id'      => 'isc_image_source',
-			'default' => '',
-		],
-		'image_source_url' => [
-			'id'      => 'isc_image_source_url',
-			'default' => '',
-		],
-		'image_source_own' => [
-			'id'      => 'isc_image_source_own',
-			'default' => '',
-		],
-		'image_posts'      => [
-			'id'      => 'isc_image_posts',
-			'default' => [],
-		],
-		'image_licence'    => [
-			'id'      => 'isc_image_licence',
-			'default' => '',
-		],
-	];
-
-	/**
 	 * Allowed image file types/extensions
 	 *
 	 * @var array allowed image extensions.
@@ -128,15 +100,16 @@ class Image_Sources {
 		add_action( 'deleted_post', [ 'ISC_Model', 'update_missing_sources_transient' ] );
 
 		/**
-		 * Clear post-image index whenever the content of a single post is updated
-		 * this could force reindexing the post after adding or removing image sources
+		 * Update index when a post is deleted or moved into trash
 		 */
-		add_action( 'wp_insert_post', [ 'ISC_Model', 'clear_single_post_images_index' ] );
+		add_action( 'before_delete_post', [ '\ISC\Indexer', 'handle_post_deletion' ] );
+		add_action( 'wp_trash_post', [ '\ISC\Indexer', 'handle_post_deletion' ] );
 
 		/**
-		 * Fire when a post or page was updated
+		 * Clear post-image index whenever the content of a single post is updated and move the content to a temporary post meta
+		 * this could force reindexing the post after adding or removing image sources
 		 */
-		add_action( 'post_updated', [ 'ISC_Model', 'update_image_post_meta' ], 10, 3 );
+		add_action( 'wp_insert_post', [ '\ISC\Indexer', 'prepare_for_reindex' ] );
 	}
 
 	/**

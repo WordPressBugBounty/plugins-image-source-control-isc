@@ -44,10 +44,17 @@ class Admin_Media_Library_Filters {
 	 * @param \WP_Query $query The current query.
 	 */
 	public function filter_media_library( \WP_Query $query ) {
-		Admin_Utils::is_media_library_list_view_page();
+		if ( ! Admin_Utils::is_media_library_list_view_page() ) {
+			return;
+		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$filter = isset( $_GET['isc_filter'] ) ? sanitize_text_field( wp_unslash( $_GET['isc_filter'] ) ) : '';
+
+		// Add image type check if images_only is enabled
+		if ( \ISC\Media_Type_Checker::enabled_images_only_option() ) {
+			$query->set( 'post_mime_type', 'image%' );
+		}
 
 		if ( $filter === 'with_source' ) {
 			$query->set(

@@ -22,12 +22,17 @@ class Admin_Fields {
 	/**
 	 * Add custom field to attachment
 	 *
-	 * @param array  $form_fields field fields.
-	 * @param object $post        post object.
+	 * @param array    $form_fields field fields.
+	 * @param \WP_Post $post        post object.
 	 *
 	 * @return array with form fields
 	 */
 	public function add_isc_fields( $form_fields, $post ) {
+		// Check if we should process this attachment based on settings
+		if ( ! \ISC\Media_Type_Checker::should_process_attachment( $post ) ) {
+			return $form_fields;
+		}
+
 		/**
 		 * Return, when the ISC fields are enabled for blocks, and we are not using the block editor.
 		 * It is tricky to detect and easy to break, so here is more information on it:

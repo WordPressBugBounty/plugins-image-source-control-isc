@@ -1,6 +1,9 @@
 <?php
 
 use ISC\Image_Sources\Image_Sources;
+use ISC\Image_Sources\Post_Meta;
+use ISC\indexer;
+
 /**
  * Logic to get and store sources
  */
@@ -21,8 +24,6 @@ class ISC_Model {
 	 * Setup registers filters and actions.
 	 */
 	public function __construct() {
-		// attachment field handling
-		add_action( 'add_attachment', [ $this, 'attachment_added' ], 10, 2 );
 		add_filter( 'attachment_fields_to_save', [ $this, 'isc_fields_save' ], 10, 2 );
 	}
 
@@ -54,155 +55,14 @@ class ISC_Model {
 	 * Update isc_image_posts meta field with includes IDs of all posts that have the image in its content
 	 * the function should be used to push a post ID to the (maybe) existing meta field
 	 *
+	 * @removed since April 2025
+	 *
 	 * @param integer $post_id ID of the target post.
 	 * @param array   $image_ids IDs of the attachments in the content.
 	 */
 	public static function update_image_posts_meta( $post_id, $image_ids ) {
-		ISC_Log::log( 'enter update_image_posts_meta()' );
 
-		$added_images   = [];
-		$removed_images = [];
-
-		// add thumbnail information
-		$thumb_id = get_post_thumbnail_id( $post_id );
-		if ( ! empty( $thumb_id ) ) {
-			$image_ids[ $thumb_id ] = wp_get_attachment_url( $thumb_id );
-			ISC_Log::log( 'thumbnail found with ID ' . $thumb_id );
-		}
-
-		// apply filter to image array, so other developers can add their own logic
-		$image_ids = apply_filters( 'isc_images_in_posts_simple', $image_ids, $post_id );
-
-		ISC_Log::log( 'known image IDs: ' . implode( ",\n\t", $image_ids ) );
-
-		// check if image IDs refer to an attachment post type
-		$valid_image_post_types = apply_filters( 'isc_valid_post_types', [ 'attachment' ] );
-		foreach ( $image_ids as $_id => $_url ) {
-			if ( ! in_array( get_post_type( $_id ), $valid_image_post_types, true ) ) {
-				ISC_Log::log( 'remove image due to invalid post type: ' . $_id );
-				unset( $image_ids[ $_id ] );
-			}
-		}
-
-		$isc_post_images = get_post_meta( $post_id, 'isc_post_images', true );
-		// just needed in very rare cases, when updates comes from outside of isc and meta fields doesn’t exist yet
-		if ( empty( $isc_post_images ) ) {
-			$isc_post_images = [];
-		}
-
-		foreach ( $image_ids as $id => $url ) {
-			if ( is_array( $isc_post_images ) && ! array_key_exists( $id, $isc_post_images ) ) {
-				ISC_Log::log( 'add new image: ' . $id );
-				$added_images[] = $id;
-			}
-		}
-		if ( is_array( $isc_post_images ) ) {
-			foreach ( $isc_post_images as $old_id => $value ) {
-				if ( ! array_key_exists( $old_id, $image_ids ) ) {
-					$removed_images[] = $old_id;
-					ISC_Log::log( 'remove image: ' . $old_id );
-				} elseif ( ! empty( $old_id ) ) {
-						$meta = get_post_meta( $old_id, 'isc_image_posts', true );
-					if ( empty( $meta ) ) {
-						ISC_Log::log( sprintf( 'adding isc_image_posts for image %d and post %d', $old_id, $post_id ) );
-						self::update_image_posts_meta_with_limit( $old_id, [ $post_id ] );
-					} elseif ( is_array( $meta ) && ! in_array( $post_id, $meta ) ) {
-						// In case the isc_image_posts is not up to date
-						$meta[] = $post_id;
-						$meta   = array_unique( $meta );
-						ISC_Log::log( sprintf( 'updating isc_image_posts for image %d and posts %s', $old_id, implode( ",\n\t", $meta ) ) );
-						self::update_image_posts_meta_with_limit( $old_id, $meta );
-					}
-				}
-			}
-		}
-
-		foreach ( $added_images as $id ) {
-			$meta = get_post_meta( $id, 'isc_image_posts', true );
-			if ( ! is_array( $meta ) || $meta === [] ) {
-				ISC_Log::log( sprintf( 'adding isc_image_posts for NEW image %d and post %d', $id, $post_id ) );
-				self::update_image_posts_meta_with_limit( $id, [ $post_id ] );
-			} else {
-				$meta[] = $post_id;
-				$meta   = array_unique( $meta );
-				ISC_Log::log( sprintf( 'adding isc_image_posts for NEW image %d and posts %s', $id, implode( ', ', $meta ) ) );
-				self::update_image_posts_meta_with_limit( $id, $meta );
-			}
-		}
-
-		foreach ( $removed_images as $id ) {
-			$image_meta = get_post_meta( $id, 'isc_image_posts', true );
-			if ( is_array( $image_meta ) ) {
-				$offset = array_search( $post_id, $image_meta );
-				if ( $offset !== false ) {
-					array_splice( $image_meta, $offset, 1 );
-					$image_meta = array_unique( $image_meta );
-					ISC_Log::log( sprintf( 'updating isc_image_posts for REMOVED image %d and posts %s', $id, implode( ', ', $image_meta ) ) );
-					self::update_image_posts_meta_with_limit( $id, $image_meta );
-				}
-			}
-		}
-	}
-
-	/**
-	 * Update the isc_image_posts meta field with a filtered limit
-	 *
-	 * @param integer $post_id   ID of the target post.
-	 * @param array   $image_ids IDs of the attachments in the content.
-	 */
-	public static function update_image_posts_meta_with_limit( int $post_id, array $image_ids ) {
-		// limit the number of post IDs to 10
-		$image_ids = array_slice( $image_ids, 0, apply_filters( 'isc_image_posts_meta_limit', 10 ) );
-
-		self::update_post_meta( $post_id, 'isc_image_posts', $image_ids );
-	}
-
-	/**
-	 * Retrieve images added to a post or page and save all information as a post meta value for the post
-	 *
-	 * @param integer $post_id   ID of a post.
-	 * @param array   $image_ids IDs of the attachments in the content.
-	 */
-	public static function update_post_images_meta( $post_id, $image_ids ) {
-		// add thumbnail information
-		$thumb_id = get_post_thumbnail_id( $post_id );
-
-		/**
-		 * If an image is used both inside the post and as post thumbnail, the thumbnail entry overrides the regular image.
-		 */
-		if ( ! empty( $thumb_id ) ) {
-			$image_ids[ $thumb_id ] = [
-				'src'       => wp_get_attachment_url( $thumb_id ),
-				'thumbnail' => true,
-			];
-			ISC_Log::log( 'thumbnail found with ID ' . $thumb_id );
-		}
-
-		// apply filter to image array, so other developers can add their own logic
-		$image_ids = apply_filters( 'isc_images_in_posts', $image_ids, $post_id );
-
-		if ( empty( $image_ids ) ) {
-			$image_ids = [];
-		}
-
-		ISC_Log::log( 'save isc_post_images with size of ' . count( $image_ids ) );
-
-		self::update_post_meta( $post_id, 'isc_post_images', $image_ids );
-	}
-
-	/**
-	 * Update attachment meta field
-	 *
-	 * @param integer $att_id attachment post ID.
-	 */
-	public function attachment_added( $att_id ) {
-		if ( ! isset( $this->fields ) ) {
-			return;
-		}
-
-		foreach ( $this->fields as $field ) {
-			self::update_post_meta( $att_id, $field['id'], $field['default'] );
-		}
+		ISC_Log::log( 'function removed. \ISC\Indexer::update_indexes covers most of it now' );
 	}
 
 	/**
@@ -261,6 +121,8 @@ class ISC_Model {
 	/**
 	 * Update image-post index attached to attachments when a post is updated
 	 *
+	 * @removed since April 2025
+	 *
 	 * @param int     $post_ID      Post ID.
 	 * @param WP_Post $post_after   Post object following the update.
 	 * @param WP_Post $post_before  Post object before the update.
@@ -268,77 +130,63 @@ class ISC_Model {
 	 * @return void
 	 */
 	public static function update_image_post_meta( $post_ID, $post_after, $post_before ) {
-		if ( ! \ISC\Indexer::can_save_image_information( $post_ID ) ) {
-			return;
-		}
-
-		$image_ids = self::filter_image_ids( $post_before->post_content );
-		$thumb_id  = get_post_thumbnail_id( $post_ID );
-		if ( ! empty( $thumb_id ) ) {
-			$image_ids[ $thumb_id ] = '';
-		}
-
-		// iterate through all image ids and remove the post ID from their "image_posts" meta data
-		foreach ( $image_ids as $image_id => $image_src ) {
-			$meta = get_post_meta( $image_id, 'isc_image_posts', true );
-			if ( is_array( $meta ) ) {
-				unset( $meta[ array_search( $post_ID, $meta ) ] );
-				self::update_post_meta( $image_id, 'isc_image_posts', $meta );
-			}
-		}
+		ISC_Log::log( 'function removed without a replacement.' );
 	}
 
 	/**
 	 * Remove the post_images index from a single post
 	 * namely the post meta field `isc_post_images`
 	 *
+	 * @moved since April 2025
+	 *
 	 * @param int $post_id Post ID.
 	 */
 	public static function clear_single_post_images_index( $post_id ) {
-		delete_post_meta( $post_id, 'isc_post_images' );
+		ISC_Log::log( 'function moved. \ISC\Image_Sources\Post_Meta\Post_Images_Meta::delete' );
+
+		Post_Meta\Post_Images_Meta::delete( $post_id );
 	}
 
 	/**
 	 * Remove post_images index
 	 * namely the post meta field `isc_post_images`
 	 *
+	 * @moved since April 2025
+	 *
 	 * @return int|false The number of rows updated, or false on error.
 	 */
 	public static function clear_post_images_index() {
-		global $wpdb;
+		ISC_Log::log( 'function moved. \ISC\Image_Sources\Post_Images_Meta::delete_all' );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-		return $wpdb->delete( $wpdb->postmeta, [ 'meta_key' => 'isc_post_images' ], [ '%s' ] );
+		return Post_Meta\Post_Images_Meta::delete_all();
 	}
 
 	/**
 	 * Remove image_posts index
 	 * namely the post meta field `isc_image_posts`
 	 *
+	 * @moved since April 2025
+	 *
 	 * @return int|false The number of rows updated, or false on error.
 	 */
 	public static function clear_image_posts_index() {
-		global $wpdb;
+		ISC_Log::log( 'function moved. \ISC\Image_Sources\Image_Posts_Meta::delete_all' );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-		return $wpdb->delete( $wpdb->postmeta, [ 'meta_key' => 'isc_image_posts' ], [ '%s' ] );
+		return Post_Meta\Image_Posts_Meta::delete_all();
 	}
 
 	/**
 	 * Remove all image-post relations
 	 * this concerns the post meta fields `isc_image_posts` and `isc_post_images`
 	 *
-	 * @return int|false The number of rows updated, or false on error.
+	 * @deprecated since April 2025
+	 *
+	 * @return bool True if the option was removed
 	 */
-	public static function clear_index() {
-		$rows_deleted_1 = self::clear_post_images_index();
-		$rows_deleted_2 = self::clear_image_posts_index();
+	public static function clear_index(): bool {
+		ISC_Log::log( 'function moved. \ISC\Indexer::clear_index' );
 
-		if ( $rows_deleted_1 !== false && $rows_deleted_2 !== false ) {
-			return $rows_deleted_1 + $rows_deleted_2;
-		}
-
-		return false;
+		return Indexer::clear_index();
 	}
 
 	/**
@@ -382,13 +230,19 @@ class ISC_Model {
 	public static function get_attachments_with_empty_sources() {
 		global $wpdb;
 
+		$where_clause = "wp_posts.post_type = 'attachment' AND wp_posts.post_status = 'inherit'";
+
+		// Add image type check if images_only is enabled
+		if ( \ISC\Media_Type_Checker::enabled_images_only_option() ) {
+			$where_clause .= " AND wp_posts.post_mime_type LIKE 'image/%'";
+		}
+
 		/**
 		 * Using EXISTS instead of LEFT JOINs resulted in much faster queries and helped caching the results.
 		 */
 		$query = "SELECT wp_posts.ID, wp_posts.post_title, wp_posts.post_parent
 	        FROM {$wpdb->posts} AS wp_posts
-	        WHERE wp_posts.post_type = 'attachment'
-	          AND wp_posts.post_status = 'inherit'
+	        WHERE {$where_clause}
 	          AND NOT EXISTS (
 	                SELECT 1
 	                FROM {$wpdb->postmeta} AS mt1
@@ -417,7 +271,16 @@ class ISC_Model {
 
 		// The result of the query is already cached for a day, or until an image is added or removed.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		return $wpdb->get_results( $wpdb->prepare( $query, 0, self::MAX_POSTS ) );
+		$attachments = $wpdb->get_results( $wpdb->prepare( $query, 0, self::MAX_POSTS ) );
+
+		$count = count( $attachments );
+
+		// update the transient if the number of results differ
+		if ( $count !== (int) get_transient( 'isc-show-missing-sources-warning' ) ) {
+			set_transient( 'isc-show-missing-sources-warning', $count, DAY_IN_SECONDS );
+		}
+
+		return $attachments;
 	}
 
 	/**
@@ -684,9 +547,10 @@ class ISC_Model {
 	 * @param int    $post_id post ID of the attachment.
 	 * @param string $key     post meta key.
 	 * @param mixed  $value   value of the post meta information.
+	 *
+	 * @return bool|int
 	 */
 	public static function update_post_meta( int $post_id, string $key, $value ) {
-
 		/**
 		 * Run when any post meta information is stored by ISC
 		 *
@@ -698,7 +562,7 @@ class ISC_Model {
 		 */
 		do_action( 'isc_update_post_meta', $post_id, $key, $value );
 
-		update_post_meta( $post_id, $key, $value );
+		return update_post_meta( $post_id, $key, $value );
 	}
 
 	/**
@@ -761,5 +625,50 @@ class ISC_Model {
 		}
 
 		return $file;
+	}
+
+	/**
+	 * Remove all plugin meta from non-image attachments
+	 *
+	 * @return void
+	 */
+	public static function remove_plugin_meta_from_non_images() {
+		// The meta keys used by ISC that should be removed from non-images
+		$isc_meta_keys = [
+			'isc_image_source',
+			'isc_image_source_url',
+			'isc_image_license',
+			'isc_image_source_own',
+			'isc_image_posts',
+			'isc_possible_usages',
+			'isc_possible_usages_last_check',
+		];
+
+		/**
+		 * Filter the meta keys to be removed from non-image attachments
+		 *
+		 * @param array $isc_meta_keys The meta keys to be removed from non-image attachments.
+		 */
+		apply_filters( 'isc_cleanup_non_image_meta_keys', $isc_meta_keys );
+
+		$attachments = get_posts(
+			[
+				'post_type'      => 'attachment',
+				'post_status'    => 'inherit',
+				'posts_per_page' => -1,
+			]
+		);
+
+		if ( empty( $attachments ) ) {
+			return;
+		}
+
+		foreach ( $attachments as $attachment ) {
+			if ( ! \ISC\Media_Type_Checker::is_image( $attachment ) ) {
+				foreach ( $isc_meta_keys as $meta_key ) {
+					delete_post_meta( $attachment->ID, $meta_key );
+				}
+			}
+		}
 	}
 }
