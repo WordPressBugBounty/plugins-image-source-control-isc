@@ -22,6 +22,11 @@ Image Source Control is your go-to solution when it comes to **handling copyrigh
 
 [Documentation](https://imagesourcecontrol.com/documentation/?utm_source=wporg&utm_medium=link&utm_campaign=wp-linkbar-documentation) | [Support](https://wordpress.org/support/plugin/image-source-control-isc/) | [Premium Features](https://imagesourcecontrol.com/unlock-isc/?utm_source=wporg&utm_medium=link&utm_campaign=wp-linkbar-pro) | [Delete Unused Images](https://imagesourcecontrol.com/features/delete-unused-images/?utm_source=wporg&utm_medium=link&utm_campaign=wp-linkbar-delete)
 
+> This level of personal and competent support deserves more than just five stars.
+> Highly recommended!
+
+⭐⭐⭐⭐⭐ by [eunde](https://wordpress.org/support/topic/excellent-plugin-and-absolutely-outstanding-support/)
+
 **Image Credit layouts**
 
 Choose between different credit displays:
@@ -98,7 +103,7 @@ Premium media cleaner features to remove unused images safely.
 
 [See Pricing](https://imagesourcecontrol.com/pricing/?utm_source=wporg&utm_medium=link&utm_campaign=pricing).
 
-Btw., Image Source Control is a suitable alternative to the discontinued or closed plugins Image Credits, Credit Tracker, or FSM Custom Featured Image Caption.
+Btw., Image Source Control is a suitable alternative to the discontinued or closed plugins Image Credits, [Credit Tracker](https://imagesourcecontrol.com/blog/credit-tracker/?utm_source=wporg&utm_medium=link&utm_campaign=credit-tracker), or FSM Custom Featured Image Caption.
 
 == Instructions ==
 
