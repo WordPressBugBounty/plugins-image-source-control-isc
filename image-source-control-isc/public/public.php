@@ -1,6 +1,7 @@
 <?php
 
 use ISC\Standard_Source;
+use ISC\Helpers;
 
 /**
  * Handles all frontend facing functionalities
@@ -127,12 +128,51 @@ class ISC_Public extends \ISC\Image_Sources\Image_Sources {
 			return;
 		}
 		// inject in footer as we can only reliably position captions when the DOM is fully loaded
-		wp_enqueue_script( 'isc_caption', plugins_url( '/assets/js/captions.js', __FILE__ ), null, ISCVERSION, true );
+		Helpers::enqueue_script( 'isc_caption', 'public/assets/js/captions.js' );
+
+		$options = $this->get_options();
+
+		$caption_style = [
+			'position'         => 'absolute',
+			'font-size'        => '0.9em',
+			'background-color' => '#333',
+			'color'            => '#fff',
+			'opacity'          => '0.70',
+			'padding'          => '0 0.15em',
+			'text-shadow'      => 'none',
+			'display'          => 'block',
+		];
+
+		$front_data = [
+			'caption_position' => isset( $options['caption_position'] ) ? esc_html( $options['caption_position'] ) : '',
+			/**
+			 * Filter: isc_public_caption_default_style
+			 * Allows to change the default caption style.
+			 *
+			 * @param array $caption_style The default caption style.
+			 * @param array $options The options array.
+			 */
+			'caption_style'    => apply_filters( 'isc_public_caption_default_style', $caption_style, $options ),
+		];
+
+		/**
+		 * Filter: isc_public_caption_script_options
+		 *
+		 * @param array $front_data The data to be localized.
+		 * @param array $options The options array.
+		 */
+		$filtered_front_data = apply_filters( 'isc_public_caption_script_options', $front_data, $options );
+
+		wp_localize_script(
+			'isc_caption',
+			'isc_front_data',
+			$filtered_front_data
+		);
 	}
 
-			/**
-			 * Front-end scripts in <head /> section.
-			 */
+	/**
+	 * Front-end scripts in <head /> section.
+	 */
 	public function front_head() {
 		// don’t add the script on AMP pages
 		if ( self::is_amp() ) {
@@ -141,14 +181,6 @@ class ISC_Public extends \ISC\Image_Sources\Image_Sources {
 
 		$options = $this->get_options();
 		?>
-			<script>
-			/* <![CDATA[ */
-				var isc_front_data =
-				{
-					caption_position : '<?php echo esc_html( $options['caption_position'] ); ?>',
-				}
-			/* ]]> */
-			</script>
 			<style>
 				.isc-source { position: relative; display: inline-block; line-height: initial; }
 				.wp-block-cover .isc-source { position: static; }
@@ -512,13 +544,9 @@ class ISC_Public extends \ISC\Image_Sources\Image_Sources {
 			return '';
 		}
 
-		$options  = $this->get_options();
-		$headline = $options['image_list_headline'];
-
 		ob_start();
 
 		?>
-			<p class="isc_image_list_title"><?php echo esc_html( $headline ); ?></p>
 			<ul class="isc_image_list">
 		<?php
 
@@ -946,14 +974,26 @@ class ISC_Public extends \ISC\Image_Sources\Image_Sources {
 	 * dedicated to displaying an empty box as well so don’t add more visible elements
 	 *
 	 * @param string $content content of the source box, i.e., list of sources.
+	 * @param bool   $create_placeholder if true, create a placeholder box without content.
 	 */
-	public function render_image_source_box( $content = null ) {
+	public function render_image_source_box( string $content = '', bool $create_placeholder = false ): string {
+		$options  = $this->get_options();
+		$headline = $options['image_list_headline'];
+
 		ob_start();
 		require ISCPATH . 'public/views/image-source-box.php';
 
 		ISC_Log::log( 'finished creating image source box' );
 
-		return ob_get_clean();
+		/**
+		 * Filter: isc_render_image_source_box
+		 * allow to modify the output of the image source box
+		 *
+		 * @param string $content content of the source box.
+		 * @param string $headline headline of the source box.
+		 * @param bool   $create_placeholder if true, create a placeholder box without content.
+		 */
+		return apply_filters( 'isc_render_image_source_box', ob_get_clean(), $content, $headline, $create_placeholder );
 	}
 
 	/**
