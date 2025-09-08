@@ -3,7 +3,7 @@ Contributors: webzunft
 Tags: credits, captions, copyrights, attributions, image sources
 Requires at least: 6.0
 Tested up to: 6.8
-Stable tag: 3.3.0
+Stable tag: 3.5.0
 Requires PHP: 7.4
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -53,7 +53,7 @@ Choose between different credit displays:
 * Warn about missing image sources
 * Manage, display, and link available licenses
 * Enable the features for any files in the media library or for images only
-* Filter the media library list by images with or without sources
+* Filter the media library list by images with or without sources, or only those using the standard source
 
 **Featured Image Caption**
 
@@ -80,6 +80,7 @@ Check out the premium features to display the image caption overlay for featured
 * Show the full text only after a click or on mouseover on the caption overlay
 * Choose which data is displayed in the Global List
 * List only images with a proper source in the Global List
+* Show the Global List as a table or a simple list view
 * Show image sources for Elementor background images, images in Kadence Blocks Galleries, and Kadence Related Content Carousel
 * Developer options to show overlay captions for CSS background images
 * Support for [background images of the Group block](https://imagesourcecontrol.com/blog/group-block-background-image/)
@@ -87,7 +88,7 @@ Check out the premium features to display the image caption overlay for featured
 * Unused Images (see below)
 * Personal email support
 
-Extended compatibility with Elementor, Avada, WP Bakery, and other page builders
+Extended compatibility with Elementor, Avada, WP Bakery, Divi, Fusion Builder, and other page builders
 as well as with plugins like WPML, Kadence Blocks, Kadence Related Content Carousel, Lightbox Gallery, and JetEngine.
 
 [See Pricing](https://imagesourcecontrol.com/pricing/?utm_source=wporg&utm_medium=link&utm_campaign=pricing).
@@ -100,6 +101,8 @@ Premium media cleaner features to remove unused images safely.
 - Run an additional deep check to see if images are used in widgets, meta fields, or options
 - Bulk delete unused images
 - Filter the list by various states
+
+Constantly extended support for finding used and unused images in plugins and page builders, e.g., Elementor, Divi, WP Bakery, WP User Meta, and the Newsletter Plugin.
 
 [See Pricing](https://imagesourcecontrol.com/pricing/?utm_source=wporg&utm_medium=link&utm_campaign=pricing).
 
@@ -162,6 +165,40 @@ See the _Instructions_ section [here](https://wordpress.org/plugins/image-source
 1. The Indexer searches for all images in published content
 
 == Changelog ==
+
+= 3.5.0 =
+
+* Feature (Pro): Search for unused media files in the `wp_usermeta` table to support plugins like WP User Meta
+* Feature (Pro): Show the Global List in a simple list view using the `style` attribute, i.e., `[isc_list_all style="list"]`
+* Improvement (Pro): Support for caption overlays on full width images in the Divi builder
+* Improvement (Pro): Support for the `data-bg-url` attribute in the Fusion Builder
+* Improvement (Pro): Ignore false positive results for unused images caused by the Newsletter Plugin
+* Improvement (Pro): Automatically purge outdated entries in the Indexer to handle unpublished content
+* Improvement: Show a warning in the media library when image filepath and `wp_posts.guid` don’t match; e.g., after migrating the domain
+* Dev: Cache the SQL query in `get_oldest_entry_date()` to prevent the same query running multiple times on ISC pages in WP admin
+
+= 3.4.0 =
+
+* Feature: Added a filter option to the Media Library list view to show only images using the “Standard” source
+* Feature: Added SVG to the list of accepted image file types
+* Feature (Pro): Show overlays for Divi background images. To use it, enable the appropriate option in the Overlay settings
+* Improvement: Prevent the content from jumping when the caption overlay is placed. The caption markup is now hidden until it was placed correctly. Critical JavaScript errors on the site could prevent them from showing, though.
+* Improvement (Pro): Rewritten rendering of the Appearance list, combining results from indexer, database check and image sources. Optional details list can be enabled in settings
+* Improvement (Pro): Moved the Elementor compatibility option to the Overlay settings, since it is only relevant for overlays
+* Improvement (Pro): Support for JetEngine smart filters
+* Improvement (Pro): Added Polish translation
+* Fix (Pro): The Per-page list stayed empty on the first page load after a post was saved when the Per-page list was enabled in the default settings and the Overlay were set to display on images outside the main content
+* Fix (Pro): The Appearance list in the Media details didn’t show if the Image Sources module was disabled, though that list depends solely on Unused Images
+* Dev (Pro): Removed storing post title and type from Database check to avoid outdated data
+* Dev (Pro): Some code for overlays was loaded even when overlays were disabled. This caused no frontend output
+* Dev (Pro): The thumbnail now has its own entry in the `isc_index` table if found when indexing a single post in the frontend
+
+= 3.3.1 =
+
+- Fix (Pro): The option to enable the expandable list for the Per-page List wasn’t stored
+- Fix: Sometimes, a “Next” link could show up on the pagination of the last page of the Global List, even if there were no more images to show
+- Dev: The query for the Global List was improved to load quickly also on sites with many images
+- Dev: Moved the Global List rendering methods to a dedicated class
 
 = 3.3.0 =
 
