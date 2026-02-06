@@ -14,7 +14,7 @@ class ISC_Log {
 	 */
 	public static function get_file_name(): string {
 		// Hash the AUTH_KEY to create a unique but persistent filename
-		return 'isc_' . hash( 'crc32', AUTH_KEY ) . '.log';
+		return 'image-source-control_' . hash( 'crc32', AUTH_KEY ) . '.log';
 	}
 
 	/**
@@ -53,7 +53,7 @@ class ISC_Log {
 	public static function enabled(): bool {
 		// true if the Debug Log option is enabled and the ?isc-log query parameter is set
 		// phpcs:ignore WordPress.Security.NonceVerification
-		return ( ! empty( Plugin::get_options()['enable_log'] ) && isset( $_GET['isc-log'] ) );
+		return ( ! empty( Plugin::get_options()['enable_log'] ) && isset( $_REQUEST['isc-log'] ) );
 	}
 
 	/**
@@ -94,7 +94,8 @@ class ISC_Log {
 	 * @return string
 	 */
 	public static function get_log_file_url(): string {
-		return ISCBASEURL . self::get_file_name();
+		$upload_dir = wp_upload_dir();
+		return $upload_dir['baseurl'] . '/' . self::get_file_name();
 	}
 
 	/**
@@ -103,7 +104,17 @@ class ISC_Log {
 	 * @return string
 	 */
 	public static function get_log_file_path(): string {
-		return ISCPATH . '/' . self::get_file_name();
+		$upload_dir = wp_upload_dir();
+		return $upload_dir['basedir'] . '/' . self::get_file_name();
+	}
+
+	/**
+	 * Check if the log file exists
+	 *
+	 * @return bool
+	 */
+	public static function log_file_exists(): bool {
+		return file_exists( self::get_log_file_path() );
 	}
 
 	/**
@@ -113,6 +124,15 @@ class ISC_Log {
 	public static function ignore_caches(): bool {
 		// phpcs:ignore WordPress.Security.NonceVerification
 		return self::enabled() && isset( $_GET['isc-ignore-cache'] );
+	}
+
+	/**
+	 * Return true if existing indexer data (Pro) should be ignored
+	 * only works in combination with an activated log
+	 */
+	public static function ignore_index(): bool {
+		// phpcs:ignore WordPress.Security.NonceVerification
+		return self::enabled() && isset( $_GET['isc-ignore-index'] );
 	}
 
 	/**

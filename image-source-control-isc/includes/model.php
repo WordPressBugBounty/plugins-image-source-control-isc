@@ -238,6 +238,14 @@ class ISC_Model {
 		}
 
 		/**
+		 * Filters the WHERE clause for the query that finds attachments with empty sources.
+		 *
+		 * @param string $where_clause The WHERE clause conditions for the attachments query.
+		 * @return string The filtered WHERE clause.
+		 */
+		$where_clause = apply_filters( 'isc_image_sources_attachments_with_empty_sources_where_clause', $where_clause );
+
+		/**
 		 * Using EXISTS instead of LEFT JOINs resulted in much faster queries and helped caching the results.
 		 */
 		$query = "SELECT wp_posts.ID, wp_posts.post_title, wp_posts.post_parent
@@ -432,7 +440,7 @@ class ISC_Model {
 			} else {
 				return 0;
 			}
-		} elseif ( ! in_array( $ext, Image_Sources::get_instance()->allowed_extensions, true ) ) {
+		} elseif ( ! in_array( $ext, Image_Sources::get_allowed_extensions(), true ) ) {
 			// a valid image extension is required, if an extension is given
 			ISC_Log::log( 'exit get_image_by_url() due to invalid image extension' );
 			return 0;
@@ -460,8 +468,9 @@ class ISC_Model {
 		 * Attachment_url_to_postid needs the URL including protocol, but cannot handle sizes, so it needs to be at exactly this position
 		 * this function finds images based on the _wp_attached_file post meta value that includes the image path followed after the upload dir
 		 * it therefore also works when the domain changed
+		 * since _wp_attached_file contains "scaled" or "rotated" as well, we keep them, but only remove sizes
 		 */
-		$id = attachment_url_to_postid( $newurl );
+		$id = attachment_url_to_postid( esc_url( preg_replace( "/-\d+x\d+\.{$ext}(.*)/i", '.' . $ext, $url ) ) );
 		if ( $id ) {
 			// store attachment ID in storage
 			$storage->update_post_id( $newurl, $id );

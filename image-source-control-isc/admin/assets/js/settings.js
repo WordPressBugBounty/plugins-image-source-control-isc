@@ -24,6 +24,89 @@ jQuery( document ).ready(
 			$( '#isc-settings-plugin-images-only-cleanup-wrapper' ).toggleClass( 'hidden', !enabled );
 		});
 
+		// Copy log URL to clipboard
+		$( '#isc-copy-log-url-btn' ).on( 'click', function() {
+			const urlField = document.getElementById( 'isc-log-url-field' );
+			if ( ! urlField ) {
+				return;
+			}
+
+			const showSuccess = function() {
+				$( '#isc-copy-log-url-success' ).stop( true, true ).fadeIn().delay( 2000 ).fadeOut();
+			};
+
+			const fallbackCopy = function() {
+				urlField.focus();
+				urlField.select();
+				urlField.setSelectionRange( 0, urlField.value.length );
+				if ( document.execCommand( 'copy' ) ) {
+					showSuccess();
+				}
+			};
+
+			if ( navigator.clipboard?.writeText ) {
+				navigator.clipboard.writeText( urlField.value ).then( showSuccess ).catch( fallbackCopy );
+			} else {
+				fallbackCopy();
+			}
+		} );
+
+		// Download log file
+		$( '#isc-download-log-btn' ).on( 'click', function() {
+			// Use AJAX to download the file via WordPress backend
+			$.ajax({
+				type: 'POST',
+				url: ajaxurl,
+				data: {
+					action: 'isc_download_log',
+					nonce: isc.ajaxNonce,
+				},
+				xhrFields: {
+					responseType: 'blob'
+				},
+				success: function( response, status, xhr ) {
+					// Get filename from Content-Disposition header or use default
+					const disposition = xhr.getResponseHeader( 'Content-Disposition' );
+					let filename = 'image-source-control.log';
+					if ( disposition && disposition.indexOf( 'filename=' ) !== -1 ) {
+						const filenameMatch = disposition.match( /filename="?([^"]+)"?/ );
+						if ( filenameMatch && filenameMatch[1] ) {
+							filename = filenameMatch[1];
+						}
+					}
+
+					// Create a blob URL and trigger download
+					const blob = new Blob( [response], { type: 'text/plain' } );
+					const url = window.URL.createObjectURL( blob );
+					const link = document.createElement( 'a' );
+					link.href = url;
+					link.download = filename;
+					document.body.appendChild( link );
+					link.click();
+					document.body.removeChild( link );
+					window.URL.revokeObjectURL( url );
+				},
+				error: function( xhr ) {
+					// Show error message
+					console.error( 'Error downloading log file:', xhr.statusText );
+					let errorMsg = 'Error downloading log file.';
+					if (xhr.status) {
+						errorMsg += ' HTTP status: ' + xhr.status + ' (' + xhr.statusText + ').';
+					}
+					// Try to extract a more specific error message from the response, if available
+					if (xhr.responseText) {
+						errorMsg += '\nDetails: ' + xhr.responseText;
+					}
+					alert(errorMsg);
+				}
+			});
+		} );
+
+		// Toggle log URL field visibility when checkbox is changed
+		$( '#isc-enable-log-checkbox' ).on( 'change', function() {
+			$( '#isc-log-url-wrapper' ).toggle( this.checked );
+		});
+
 		// Show and update preview when a position option is clicked
 		$('#isc-settings-caption-pos-options button').on( 'click', function (event) {
 			// Stop propagation to prevent document click event from hiding the preview immediately

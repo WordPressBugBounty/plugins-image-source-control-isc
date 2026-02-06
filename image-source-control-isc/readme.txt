@@ -2,8 +2,8 @@
 Contributors: webzunft
 Tags: credits, captions, copyrights, attributions, image sources
 Requires at least: 6.0
-Tested up to: 6.8
-Stable tag: 3.5.0
+Tested up to: 6.9
+Stable tag: 3.7.0
 Requires PHP: 7.4
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -78,18 +78,18 @@ Check out the premium features to display the image caption overlay for featured
 * Show the standard picture credit for all images without a selected source
 * [Display IPTC copyright metadata](https://imagesourcecontrol.com/blog/iptc-copyright-information-image-caption-wordpress/) in the backend and automatically as a standard source in the frontend
 * Show the full text only after a click or on mouseover on the caption overlay
-* Choose which data is displayed in the Global List
+* Choose which data is displayed in the [Global List](https://imagesourcecontrol.com/features/global-list/)
 * List only images with a proper source in the Global List
 * Show the Global List as a table or a simple list view
 * Show image sources for Elementor background images, images in Kadence Blocks Galleries, and Kadence Related Content Carousel
 * Developer options to show overlay captions for CSS background images
 * Support for [background images of the Group block](https://imagesourcecontrol.com/blog/group-block-background-image/)
 * Exclude certain images from showing the overlay by adding the `isc-disable-overlay` class
-* Unused Images (see below)
+* Detect Unused Images (see below)
 * Personal email support
 
 Extended compatibility with Elementor, Avada, WP Bakery, Divi, Fusion Builder, and other page builders
-as well as with plugins like WPML, Kadence Blocks, Kadence Related Content Carousel, Lightbox Gallery, and JetEngine.
+as well as with plugins like Advanced Custom Fields, WPML, Kadence Blocks, Kadence Related Content Carousel, Lightbox Gallery, Newsletter plugin, and JetEngine.
 
 [See Pricing](https://imagesourcecontrol.com/pricing/?utm_source=wporg&utm_medium=link&utm_campaign=pricing).
 
@@ -97,10 +97,14 @@ as well as with plugins like WPML, Kadence Blocks, Kadence Related Content Carou
 
 Premium media cleaner features to remove unused images safely.
 
-– Go to _Media > Unused Images_ to see and remove unused images
-- Run an additional deep check to see if images are used in widgets, meta fields, or options
+- Go to _Media > Unused Images_ to see and remove unused images
+- Check automatically all pages in the frontend to detect real use
+- Run a deep check in the database to find references to images outside the content, like in meta data or options
 - Bulk delete unused images
+- Check either all images and pages, or only new or changed ones
+- Works for pages behind a login (e.g., membership sites or maintenance mode)
 - Filter the list by various states
+- Ignore certain images from being listed as unused
 
 Constantly extended support for finding used and unused images in plugins and page builders, e.g., Elementor, Divi, WP Bakery, WP User Meta, and the Newsletter Plugin.
 
@@ -155,16 +159,59 @@ See the _Instructions_ section [here](https://wordpress.org/plugins/image-source
 1. Display image attribution captions as an overlay above the image
 1. Display a list of all images of your site and their sources on a dedicated page
 1. Edit image source settings in the Image block
-1. Bulk-editing image sources in the Media Library
-1. List image usage in the Media Library (optional column)
-1. Unused Images – Media Cleaner feature to safely remove unused images
+1. Bulk-editing image sources in the Media Library (Pro)
+1. List image usage in the Media Library in an optional column (Pro)
+1. Unused Images – Media Cleaner feature to safely remove unused images (Pro)
 1. Customizing the display of image captions as an overlay
 1. Customizing the list of image sources displayed under posts
 1. Customizing the global list of image sources
 1. Manage image usage licenses
-1. The Indexer searches for all images in published content
+1. The Scanner searches for unused images (Pro)
 
 == Changelog ==
+
+= 3.7.0 =
+
+* Feature (Pro): Introducing the new unified **Scanner** for Unused Images. This powerful tool combines the previous Indexer and Database search into a single, streamlined interface. The existing "Indexer" page will slowly be phased out. The individual Deep Check will be renamed to "Database Check" in the future
+* Feature (Pro): Bulk edit image sources for multiple images directly in the Media Library list view
+* Feature (Pro): Mark images as "Ignored" in the Unused Images list to focus on relevant items
+* Feature: Added a download button for the ISC log file in the settings for easier debugging
+* Improvement (Pro): Adaptive batching for the Content Scan to optimize performance based on server speed
+* Improvement (Pro): New "Any image URL" indexing option to detect images in CSS backgrounds and inline styles during the Content Scan
+* Improvement (Pro): Specialized usage detection for images in Advanced Custom Fields (ACF) and the Newsletter plugin
+* Improvement (Pro): Enhanced detection and labeling of "Global" images found in the page head or body
+* Improvement (Pro): Detailed error logging for the Scanner to help troubleshoot access issues, empty and redirected pages
+* Improvement (Pro): Add warning when many pages scanned but few images found
+* Improvement: Automatically clear admin notices from other plugins on ISC pages to provide a cleaner management interface
+* Improvement: Added a "Layout" section in Global List settings with links to styling tips and documentation
+* Improvement: Support for single quotes in HTML attributes for better compatibility with themes like Kadence and block-based background images
+* Improvement: Improved detection of scaled and rotated images to ensure correct attribution
+* Improvement: Display the Post ID in the Global List when a post has no title
+* Fix (Pro): Appearance list showed an upsell pitch
+* Fix: Moved Global List filtering to the database query level to fix pagination issues and improve performance
+* Fix: Hide the "Tools" link when the Image Sources module is disabled
+* Dev (Pro): Prevent attachments from self-referencing their own entry in wp_posts during usage detection
+* Dev (Pro): Add safety margin when deleting old entries from the index table
+* Dev: Prevented deprecation notices in the block editor for future WordPress versions (7.0+)
+* Dev: Resolved PHP 8.4 compatibility issues related to nullable parameters
+* Dev: Moved the log file to the WordPress uploads directory for better accessibility and security
+* Dev: Significant increase in automated test coverage for the Indexer, Global List, and Unused Images modules
+* Dev: Hardened hook handling to prevent potential fatal errors during future plugin updates
+* Dev: The `isc_image_sources_attachments_with_empty_sources_where_clause` filter hook can be used to manipulate the `where` clause of the search for images without an image source.
+
+= 3.6.1 =
+
+* Fix (Pro): Overlays did not display on background images of core blocks (i.e., groups) due to an undocumented change in WP 6.9 regarding the conversion of apostrophes in inline styles
+
+= 3.6.0 =
+
+* Feature (Pro): Execute the Indexer for Unused Images as a logged-in user; enable this option if your site is (partially) hidden behind a login or user capabilities
+* Feature (Pro): Optionally run the indexer only on un-indexed instead of all posts
+* Improvement (Pro): Added labels for icons in the Unused Images list for better clarity
+* Improvement (Pro): An image is no longer considered “used” if the attached post is moved to the trash; previously, only fully deleting the post did that
+* Fix: Prevent a fatal error on comment edit pages
+* Fix: The Images-only option caused non-images (e.g., PDFs) to no longer show in the media library
+* Dev: Disables autoload of the `isc_storage` option
 
 = 3.5.0 =
 
