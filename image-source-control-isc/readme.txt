@@ -3,7 +3,7 @@ Contributors: webzunft
 Tags: credits, captions, copyrights, attributions, image sources
 Requires at least: 6.0
 Tested up to: 7.0
-Stable tag: 3.9.2
+Stable tag: 3.11.0
 Requires PHP: 7.4
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -89,7 +89,8 @@ Check out the premium features to display the image caption overlay for featured
 * Personal email support
 
 Extended compatibility with Elementor, Avada, WP Bakery, Divi, Fusion Builder, and other page builders
-as well as with plugins like Advanced Custom Fields, WPML, Kadence Blocks, Kadence Related Content Carousel, Lightbox Gallery, Newsletter plugin, and JetEngine.
+themes like Soledad and Kadence (including Kadence Blocks, Kadence Theme Kit Pro, Kadence Shop Kit Pro, and Kadence Related Content Carousel),
+as well as with plugins like Advanced Custom Fields, WPML, Lightbox Gallery, Newsletter plugin, and JetEngine.
 
 [See Pricing](https://imagesourcecontrol.com/pricing/?utm_source=wporg&utm_medium=link&utm_campaign=pricing).
 
@@ -98,15 +99,26 @@ as well as with plugins like Advanced Custom Fields, WPML, Kadence Blocks, Kaden
 Premium media cleaner features to remove unused images safely.
 
 - Go to _Media > Unused Images_ to see and remove unused images
-- Check automatically all pages in the frontend to detect real use
-- Run a deep check in the database to find references to images outside the content, like in meta data or options
+- Run the Content Scan to find actually used images in the frontend
+- Run the Database Scan to find references to images outside the content, like in meta data or options
 - Bulk delete unused images
 - Check either all images and pages, or only new or changed ones
 - Works for pages behind a login (e.g., membership sites or maintenance mode)
 - Filter the list by various states
 - Ignore certain images from being listed as unused
 
-Constantly extended support for finding used and unused images in plugins and page builders, e.g., Elementor, Divi, WP Bakery, WP User Meta, and the Newsletter Plugin.
+Constantly extended support for finding used and unused images in plugins and page builders, e.g., Elementor, Divi, WP Bakery, WP User Meta, WooCommerce, Kadence, and the Newsletter Plugin.
+
+[See Pricing](https://imagesourcecontrol.com/pricing/?utm_source=wporg&utm_medium=link&utm_campaign=pricing).
+
+**Media Trash**
+
+Move images to the trash instead of directly deleting them permanently. This eases the test if a deleted image was actually unused and allows for easy recovery if it was not.
+
+- Enabled the module in the settings
+- Media Trash has its own menu under _Media > Media Trash_
+- Clear the media trash in bulk
+- Recover trashed images with one click
 
 [See Pricing](https://imagesourcecontrol.com/pricing/?utm_source=wporg&utm_medium=link&utm_campaign=pricing).
 
@@ -169,6 +181,20 @@ See the _Instructions_ section [here](https://wordpress.org/plugins/image-source
 1. The Scanner searches for unused images (Pro)
 
 == Changelog ==
+
+= 3.11.0 =
+
+* Feature (Pro): New “Media Trash” module to move images to the trash instead of directly deleting them permanently. This allows for easy recovery
+* Dev (Pro): Log failed license API requests when the debug option is enabled to help troubleshoot license activation issues
+
+= 3.10.0 =
+
+* Feature (Pro): New “Deep Check” option to find unused images in post and term meta fields added by plugins. This is optional to save performance.
+* Improvement (Pro): Find images used in WooCommerce product archive thumbnails
+* Improvement (Pro): Compatibility for image captions in the Soledad theme
+* Improvement (Pro): Find used images in the "Above Header Background Image" option in Kadence Theme Kit Pro
+* Improvement (Pro): Find used images in the variation images added by Kadence Shop Kit Pro
+* Fix (Pro): Icons in buttons were misplaced in WordPress 7.0
 
 = 3.9.2 =
 
