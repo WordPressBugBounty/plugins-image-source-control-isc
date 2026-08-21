@@ -23,12 +23,13 @@ class Settings {
 	public function settings_init() {
 		$this->upgrade_settings();
 		register_setting( 'isc_options_group', 'isc_options', [ $this, 'settings_validation' ] );
-
 		new \ISC\Settings\Sections\Newsletter();
 		new \ISC\Settings\Sections\Plugin_Options();
+		new \ISC\Settings\Sections\Compatibility();
 		new \ISC\Settings\Sections\Caption();
 		new \ISC\Settings\Sections\Page_List();
 		new \ISC\Settings\Sections\Global_List();
+		new \ISC\Settings\Sections\Ai_Images();
 		new \ISC\Settings\Sections\Licenses();
 		new \ISC\Settings\Sections\Miscellaneous();
 	}
