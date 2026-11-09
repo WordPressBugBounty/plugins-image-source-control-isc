@@ -3,6 +3,7 @@
 namespace ISC\Settings\Sections;
 
 use ISC\Settings;
+use ISC\Site_Health\Dom_Document;
 
 /**
  * Compatibility checks for known third-party integrations.
@@ -81,6 +82,7 @@ class Compatibility extends Settings\Section {
 	 */
 	protected function get_checks(): array {
 		return [
+			'check_dom_document_extension',
 			'check_advanced_custom_fields_unused_images',
 			'check_avada_builder',
 			'check_blocksy_theme',
@@ -95,11 +97,28 @@ class Compatibility extends Settings\Section {
 			'check_kadence_theme_kit_pro_unused_images',
 			'check_newsletter_unused_images',
 			'check_polylang',
+			'check_shortpixel_image_optimizer',
 			'check_soledad',
 			'check_woocommerce_unused_images',
 			'check_wp_bakery',
 			'check_wp_all_import',
 			'check_wpml',
+		];
+	}
+
+	/**
+	 * Check if the PHP DOM extension is available.
+	 *
+	 * @return array|null
+	 */
+	public function check_dom_document_extension() {
+		if ( Dom_Document::has_dom_document() ) {
+			return null;
+		}
+
+		return [
+			'name'        => __( 'PHP DOM extension', 'image-source-control-isc' ),
+			'description' => Dom_Document::get_missing_dom_document_description(),
 		];
 	}
 
@@ -340,6 +359,23 @@ class Compatibility extends Settings\Section {
 			'name'          => 'Polylang',
 			'manual_url'    => 'https://imagesourcecontrol.com/documentation/compatibility/#Polylang',
 			'show_pro_link' => false,
+		];
+	}
+
+	/**
+	 * Check if the Shortpixel Image Optimizer plugin is active and Pro is not.
+	 *
+	 * @return array|null
+	 */
+	public function check_shortpixel_image_optimizer() {
+		if ( ! defined( 'SHORTPIXEL_IMAGE_OPTIMISER_VERSION' ) || \ISC\Plugin::is_pro() ) {
+			return null;
+		}
+
+		return [
+			'name'          => 'Shortpixel Image Optimizer',
+			'show_pro_link' => true,
+			'manual_url'    => 'https://imagesourcecontrol.com/documentation/compatibility/#Shortpixel_Image_Optimizer',
 		];
 	}
 

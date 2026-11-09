@@ -32,6 +32,8 @@ class Settings {
 		new \ISC\Settings\Sections\Ai_Images();
 		new \ISC\Settings\Sections\Licenses();
 		new \ISC\Settings\Sections\Miscellaneous();
+		new \ISC\Site_Health\Dom_Document();
+		new \ISC\Site_Health\Missing_Sources();
 	}
 
 	/**

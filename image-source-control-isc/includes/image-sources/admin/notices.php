@@ -32,7 +32,8 @@ class Admin_Notices {
 		$screen = get_current_screen();
 		if ( empty( $options['warning_onesource_missing'] )
 			|| empty( $screen->id )
-			|| $screen->id === 'media_page_isc-sources' ) {
+			|| $screen->id === 'media_page_isc-sources'
+			|| $screen->id === 'site-health' ) {
 			return;
 		}
 
