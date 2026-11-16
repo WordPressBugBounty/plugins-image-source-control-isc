@@ -1,9 +1,9 @@
 === Image Source Control Lite – Show Image Credits and Captions ===
 Contributors: webzunft
 Tags: credits, captions, copyrights, attributions, image sources
-Requires at least: 6.0
+Requires at least: 6.9
 Tested up to: 7.1
-Stable tag: 3.14.0
+Stable tag: 3.15.0
 Requires PHP: 7.4
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -196,6 +196,12 @@ See the _Instructions_ section [here](https://wordpress.org/plugins/image-source
 1. Mark AI-generated images with a label that indicates the image was created by artificial intelligence
 
 == Changelog ==
+
+= 3.15.0 =
+
+* Security: Sanitize image license metadata and escape license labels and URLs to prevent authenticated authors from injecting malicious code
+* Dev: Require WordPress 6.9 or newer
+* Fix (Pro): Prefer bundled Pro translations over installed Lite language packs
 
 = 3.14.0 =
 

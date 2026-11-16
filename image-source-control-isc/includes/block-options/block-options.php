@@ -71,9 +71,10 @@ class ISC_Block_Options {
 			'attachment',
 			'isc_image_licence',
 			[
-				'show_in_rest' => true,
-				'single'       => true,
-				'type'         => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+				'show_in_rest'      => true,
+				'single'            => true,
+				'type'              => 'string',
 			]
 		);
 		register_post_meta(
@@ -218,7 +219,7 @@ class ISC_Block_Options {
 		}
 		// separated from register_script since wp_add_inline_script needs a working handle
 		wp_enqueue_script( 'isc/image-block' );
-		wp_set_script_translations( 'isc/image-block', 'image-source-control-isc', apply_filters( 'isc_path_to_languages', '' ) );
+		wp_set_script_translations( 'isc/image-block', 'image-source-control-isc' );
 
 		Helpers::enqueue_script( 'isc/media-upload', 'admin/assets/js/media-upload.js', [ 'media-upload' ] );
 	}
@@ -229,6 +230,6 @@ class ISC_Block_Options {
 	public function edit_link_assets() {
 		Helpers::enqueue_script( 'isc/image-block-edit-link', 'includes/block-options/isc-image-block-edit-link.js', [ 'wp-blocks', 'wp-i18n', 'wp-element', 'wp-editor' ] );
 
-		wp_set_script_translations( 'isc/image-block-edit-link', 'image-source-control-isc', apply_filters( 'isc_path_to_languages', '' ) );
+		wp_set_script_translations( 'isc/image-block-edit-link', 'image-source-control-isc' );
 	}
 }

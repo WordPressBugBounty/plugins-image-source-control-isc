@@ -99,9 +99,9 @@ class Image_Source_String extends Renderer {
 			}
 
 			if ( isset( $licence_url ) && $licence_url !== '' ) {
-				$source = sprintf( '%1$s | <a href="%3$s" target="_blank" rel="nofollow">%2$s</a>', $source, $metadata['licence'], $licence_url );
+				$source = sprintf( '%1$s | <a href="%3$s" target="_blank" rel="nofollow">%2$s</a>', $source, esc_html( $metadata['licence'] ), esc_url( $licence_url ) );
 			} else {
-				$source = sprintf( '%1$s | %2$s', $source, $metadata['licence'] );
+				$source = sprintf( '%1$s | %2$s', $source, esc_html( $metadata['licence'] ) );
 			}
 		}
 
